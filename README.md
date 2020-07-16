@@ -1,30 +1,23 @@
-# TOPIC : Best practices for writing Dockerfiles -TH
-## General guidelines and recommendations
-### Create ephemeral containers
-### Understand build context
-### Pipe Dockerfile through stdin
-  * BUILD AN IMAGE USING A DOCKERFILE FROM STDIN, WITHOUT SENDING BUILD CONTEXT
-  * BUILD FROM A LOCAL BUILD CONTEXT, USING A DOCKERFILE FROM STDIN	
-  * BUILD FROM A REMOTE BUILD CONTEXT, USING A DOCKERFILE FROM STDIN
-### Exclude with .dockerignore //Short
-### Use multi-stage builds
-### Don’t install unnecessary packages //Short
-### Decouple applications
-### Minimize the number of layers
 ### Sort multi-line arguments //Short
+- การแบ่งโค้ดให้เป็นหลายบรรทัด
+- การทำแบบนี้จะช่วยให้หลีกเลี่ยงการพิมซ้ำ
+- ง่ายต่อการที่จะอ่าน แก้ไข และปรับปรุง
+- นอกจากนั้นยังจะทำให้คนที่จะกดยอมรับ pull request เข้าใจได้ง่ายและสามารถให้คำแนะนำได้อย่างถูกต้อง
+- ให้พื้นที่ว่างก่อนที่จะใส่เครื่องหมาย \ ตัวอย่างเช่น
+  - $docker container run -d --name mongo \
+    --network demo-network \
+    -e MONGO_INITDB_ROOT_USERNAME=mongoadmin \
+    -e MONGO_INITDB_ROOT_PASSWORD=secret \
+    -e MONGO_INITDB_DATABASE=mydb \
+    mongo:4.2.8
+
 ### Leverage build cache
+
 ### Dockerfile instructions //Short
+
 ### FROM //Short
+
 ### LABEL
+
 ### RUN  //Short
-### APT-GET //Long
-### USING PIPES
-### CMD
-### EXPOSE
-### ENV
-### ADD or COPY
-### ENTRYPOINT
-### VOLUME  //Short
-### USER
-### WORKDIR //Short
-### ONBUILD 
+
