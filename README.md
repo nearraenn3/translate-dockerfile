@@ -1,23 +1,24 @@
-### Sort multi-line arguments //Short
-- การแบ่งโค้ดให้เป็นหลายบรรทัด
-- การทำแบบนี้จะช่วยให้หลีกเลี่ยงการพิมซ้ำ
-- ง่ายต่อการที่จะอ่าน แก้ไข และปรับปรุง
-- นอกจากนั้นยังจะทำให้คนที่จะกดยอมรับ pull request เข้าใจได้ง่ายและสามารถให้คำแนะนำได้อย่างถูกต้อง
-- ให้พื้นที่ว่างก่อนที่จะใส่เครื่องหมาย \ ตัวอย่างเช่น
-  - $docker container run -d --name mongo \
-    --network demo-network \
-    -e MONGO_INITDB_ROOT_USERNAME=mongoadmin \
-    -e MONGO_INITDB_ROOT_PASSWORD=secret \
-    -e MONGO_INITDB_DATABASE=mydb \
-    mongo:4.2.8
+### APT-GET
+APT-GET
+Use-case ที่น่าจะเกิดขึ้นอย่างแน่นอนสำหรับ RUN คือแอพพลิเคชันของ apt-get. เพราะคือการติดตั้ง packages คำสั่ง  RUN apt-get   มีหลากหลาย gotchas เพื่อที่จะหลีกเลี่ยง RUN apt-get upgrade และ dist-upgrade มี package ที่มีความจำเป็นหลาย package จากparent images ที่ไม่สามารถอัพเกรดข้างในunprivileged container ได้ ถ้า package contained ใน parent image คือการล้าสมัย(เลิกใช้แล้ว) ให้ติดต่อผู้ดูแล  ถ้าคุณรู้จัก
 
-### Leverage build cache
+รวมกันเสมอ RUN apt-get update กับ  apt-get install ในคำสั่ง  RUN เหมือนกัน ยกตัวอย่าง:
 
-### Dockerfile instructions //Short
+RUN apt-get update && apt-get install -y \
+    package-bar \
+    package-baz \
+    package-foo
+ใช้คำสั่ง apt-get update เพียงอย่างเดียวใน RUN เพราะปัญหาการแคชและต่อมาคือ apt-get install คำสั่งล้มเหลว ยกตัวอย่างเชื่อ , ไปที่ Dockerfile:
+FROM ubuntu:18.04
+RUN apt-get update
+RUN apt-get install -y curl
+หลังจากสร้าง  image, layers ทั้งหมดใน Docker cache. สมมติว่าคุณแก้ไขในภายหลัง apt-get install โดดยการเพิ่ม  extra package:
+FROM ubuntu:18.04
+RUN apt-get update
+RUN apt-get install -y curl nginx
 
-### FROM //Short
-
-### LABEL
-
-### RUN  //Short
-
+### USING PIPES
+### CMD
+### EXPOSE
+### ENV
+### ADD or COPY
