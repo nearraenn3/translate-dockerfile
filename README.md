@@ -40,8 +40,10 @@
     * **tag** หรือ **digest** เป็นทางเลือก หากคุณไม่เลือกตัวใดตัวหนึ่ง **Builder** จะใช้แท็ก **latest** เป็นค่าเริ่มต้น **Builder** จะส่งคืนข้อผิดพลาดหากไม่พบค่าแท็ก
   * **--platform** สามารถใช้ เพื่อระบุแพลตฟอร์มของ **Image** ในกรณีที่ **FROM** อ้างอิง **Image** แบบหลายแพลตฟอร์ม ตัวอย่างเช่น **linux/amd64, linux/arm64 หรือ windows/amd64** โดยค่าเริ่มต้นแพลตฟอร์มเป้าหมายของคำขอสร้างจะถูกใช้ ข้อโต้แย้งการสร้างระดับ Global สามารถนำมาใช้ในค่าของการตั้งค่าสเตจนี้ตัวอย่างเช่น automatic platform ARGs ช่วยให้สามารถบังคับให้สเตจสร้างแพลตฟอร์มแบบเนทีฟ (--platform = $ BUILDPLATFORM) และใช้เพื่อรวบรวมคอมไพล์ไปยังแพลตฟอร์มเป้าหมายภายในสเตจ
   * Example
-    * FROM [--platform=<platform>] <image> [AS <name>]
-    * FROM [--platform=<platform>] <image>[:<tag>] [AS <name>]
+    ```bash
+    > FROM [--platform=<platform>] <image> [AS <name>]
+    > FROM [--platform=<platform>] <image>[:<tag>] [AS <name>]
+    ```
 
   ## LABEL
   * 
