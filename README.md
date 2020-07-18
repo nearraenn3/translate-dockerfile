@@ -5,15 +5,18 @@
 * นอกจากนั้นยังจะทำให้คนที่จะกดยอมรับ pull request เข้าใจได้ง่ายและสามารถให้คำแนะนำได้อย่างถูกต้อง
 * ให้พื้นที่ว่างก่อนที่จะใส่เครื่องหมาย \ ตัวอย่างเช่น
     #### GOOD
-    * $docker container run -d --name mongo \\\
+    ```bash
+    > $docker container run -d --name mongo \\\
       --network demo-network  \\\
       -e MONGO_INITDB_ROOT_USERNAME=mongoadmin \\\
       -e MONGO_INITDB_ROOT_PASSWORD=secret \\\
       -e MONGO_INITDB_DATABASE=mydb \\\
       mongo:4.2.8 
-
+    ```
     #### BAD
-    * $docker container run -d --name mongo --network demo-network -e MONGO_INITDB_ROOT_USERNAME=mongoadmin -e MONGO_INITDB_ROOT_PASSWORD=secret -e MONGO_INITDB_DATABASE=mydb mongo:4.2.8 
+    ```bash
+    > $docker container run -d --name mongo --network demo-network -e MONGO_INITDB_ROOT_USERNAME=mongoadmin -e MONGO_INITDB_ROOT_PASSWORD=secret -e MONGO_INITDB_DATABASE=mydb mongo:4.2.8 
+    ```
 
 # Leverage build cache
 * Docker จะทำตามคำสั่งใน **Dockerfile** ในขณะที่สร้าง Image เพื่อดำเนินการตามลำดับที่ระบุ เมื่อตรวจสอบคำสั่งแต่ละครั้ง Docker จะค้นหาภาพที่มีอยู่ในแคช (Caching) ที่สามารถนำมาใช้ซ้ำได้แทนที่จะสร้างภาพใหม่
