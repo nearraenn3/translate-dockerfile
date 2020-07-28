@@ -249,19 +249,58 @@ EOF
 Use-case ที่น่าจะเกิดขึ้นอย่างแน่นอนสำหรับ RUN คือแอพพลิเคชันของ apt-get. เพราะคือการติดตั้ง packages คำสั่ง  RUN apt-get   มีหลากหลาย gotchas เพื่อที่จะหลีกเลี่ยง RUN apt-get upgrade และ dist-upgrade มี package ที่มีความจำเป็นหลาย package จากparent images ที่ไม่สามารถอัพเกรดข้างในunprivileged container ได้ ถ้า package contained ใน parent image คือการล้าสมัย(เลิกใช้แล้ว) ให้ติดต่อผู้ดูแล  ถ้าคุณรู้จัก
 
 รวมกันเสมอ RUN apt-get update กับ  apt-get install ในคำสั่ง  RUN เหมือนกัน ยกตัวอย่าง:
-
+```js
 RUN apt-get update && apt-get install -y \
     package-bar \
     package-baz \
     package-foo
-ใช้คำสั่ง apt-get update เพียงอย่างเดียวใน RUN เพราะปัญหาการแคชและต่อมาคือ apt-get install คำสั่งล้มเหลว ยกตัวอย่างเชื่อ , ไปที่ Dockerfile:
+ ```
+
+ใช้คำสั่ง ```apt-get update ```เพียงอย่างเดียวใน RUN เพราะปัญหาการแคชและต่อมาคือ apt-get install คำสั่งล้มเหลว ยกตัวอย่างเชื่อ , ไปที่ Dockerfile:
+```js
 FROM ubuntu:18.04
 RUN apt-get update
 RUN apt-get install -y curl
-หลังจากสร้าง  image, layers ทั้งหมดใน Docker cache. สมมติว่าคุณแก้ไขในภายหลัง apt-get install โดดยการเพิ่ม  extra package:
+```
+หลังจากสร้าง  image, layers ทั้งหมดใน Docker cache. สมมติว่าคุณแก้ไขในภายหลัง ``` apt-get install``` โดดยการเพิ่ม  extra package:
+```js
 FROM ubuntu:18.04
 RUN apt-get update
 RUN apt-get install -y curl nginx
+```
+หลังจากสร้างภาพเลเยอร์ทั้งหมดอยู่ในdacker cache สมมติว่าคุณแก้ไขในภายหลัง ``` apt-get install ``` โดยการเพิ่มแพ็คเกจพิเศษ :
+```js
+FROM ubuntu:18.04
+RUN apt-get update
+RUN apt-get install -y curl nginx
+```
+Docker เห็นคําแนะนําเริ่มต้นและการปรับเปลี่ยนเหมือนและนํามาใช้แคชจากขั้นตอนก่อนหน้านี้. และผลของ ```apt-get update ```ไม่ได้ดำเนินการเพราะการสร้างใช้รุ่นแคช เนื่องจากการปรับปรุง apt-get up date ไม่ได้ถูกเรียกใช้ การบิวด์ของคุณอาจได้รับแพ็คเกจที่ล้าสมัยของแพ็คเกจ curl และ nginx 
+การใช้ ```RUN apt-get update && apt-get install -y ```มั่นใจว่าไฟล์ Dockerfile ติดตั้งแพ็คเกจเวอร์ชันล่าสุดโดยไม่มีการเข้ารหัสหรือการแทรกแซงด้วยตนเอง เทคนิคนี้เรียกว่า“ การป้องกันแคช” นอกจากนี้คุณยังสามารถใช้แคชได้โดยระบุรุ่นของแพ็คเกจ สิ่งนี้เรียกว่าการตรึงเวอร์ชันเช่น: 
+```js
+RUN apt-get update && apt-get install -y \
+    package-bar \
+    package-baz \
+    package-foo=1.3.*
+```
+การตรึงเวอร์ชันจะบังคับให้บิวด์เรียกใช้เวอร์ชันเฉพาะโดยไม่คำนึงถึงสิ่งที่อยู่ในแคชเทคนิคนี้ยังสามารถลดความล้มเหลวเนื่องจากการเปลี่ยนแปลงที่ไม่คาดคิดในแพ็คเกจที่จำเป็น ด้านล่างเป็นรูปแบบที่ดี ```RUN ```เป็นคำสั่งที่แสดงให้เห็นถึงทั้งหมด``` apt-get``` ที่แนะนำ
+```js
+RUN apt-get update && apt-get install -y \
+    aufs-tools \
+    automake \
+    build-essential \
+    curl \
+    dpkg-sig \
+    libcap-dev \
+    libsqlite3-dev \
+    mercurial \
+    reprepro \
+    ruby1.9.1 \
+    ruby1.9.1-dev \
+    s3cmd=1.1.* \
+ && rm -rf /var/lib/apt/lists/*
+```
+อาร์กิวเมนต์ s3cmd ระบุรุ่น 1.1.* หากภาพก่อนหน้านี้ใช้รุ่นเก่าระบุใหม่ทําให้เกิดแคชของ ```apt-get update``` รับการปรับปรุงและให้แน่ใจว่าการติดตั้งรุ่นใหม่ รายการแพคเกจในแต่ละสายยังสามารถป้องกันความผิดพลาดในการทําสําเนาแพคเกจ
+นอกจากนี้เมื่อคุณทําความสะอาดแคช apt โดยการลบ ```/var/lib/apt/lists``` รายการจะช่วยลดขนาดภาพเนื่องจากแคช apt ไม่ได้เก็บไว้ในชั้น ตั้งแต่คําสั่ง ```RUN``` เริ่มต้นด้วยการปรับปรุงฉลาดรับแคชแพคเกจจะถูกรีเฟรชเสมอก่อนที่จะฉลาดได้รับการติดตั้ง  Debian และ Ubuntu automatically ```run apt-get clean,``` ดังนั้นการเรียกร้องที่ชัดเจน
 
 * USING PIPES
 ### CMD
