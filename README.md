@@ -147,11 +147,51 @@ EOF
 เมื่อสร้างภาพโดยใช้พื้นที่เก็บข้อมูล Git ระยะไกลเป็นบริบทการสร้างนักเทียบท่าทำการโคลน git ของพื้นที่เก็บข้อมูลบนเครื่องท้องถิ่นและส่งไฟล์เหล่านั้นเป็นบริบทการสร้างไปยัง daemon คุณลักษณะนี้ต้องการให้ติดตั้ง git บนโฮสต์ที่คุณเรียกใช้คำสั่ง docker build
 
 =======
-### Exclude with .dockerignore //Short
+### Exclude with .dockerignore
+หากต้องการยกเว้นไฟล์ที่ไม่เกี่ยวข้องกับการ build (โดยไม่ต้องปรับโครงสร้าง respository ต้นทางของคุณ) ให้ใช้ไฟล์ .dockerignore ซึ่งไฟล์นี้รองรับรูปแบบการแยกที่คล้ายกับไฟล์ .dockerignore สำหรับข้อมูลการสร้างไฟล์ใหม่ ให้ดูที่ไฟล์ .dockerignore
 ### Use multi-stage builds
-### Don’t install unnecessary packages //Short
+การใช้ multi-stage build ช่วยให้คุณลดขนาดของ image ที่เสร็จสิ้นได้อย่างมาก โดยไม่ต้องพยายามที่จะใช้สื่อกลางในการลดจำนวนเลเยอร์และไฟล์ เพราะว่า image ที่อยู่ในระหว่างการ build ในขั้นตอนสุดท้าย คุณจะสามารถลดขนาดเลเยอร์ของ image ได้โดยการ build cache
+ยกตัวอย่างเช่น ถ้าคุณ build โดยใช้หลายเลเยอร์ คุณสามารถเรียงลำดับของมันได้จากสิ่งที่เปลี่ยนแปลงน้อยที่สุด (เพื่อยืนยันว่าการ build cache สามารถนำกลับมาใช้ประโยชน์ได้) ไปสู่สิ่งที่เปลี่ยนแปลงมากที่สุดได้
+* ติดตั้ง tools ที่คุณต้องการใช้ build แอปพลิเคชันของคุณ
+* ติดตั้งหรืออัปเดต library ที่อ้างอิงถึง
+* สร้างแอปพลิเคชันของคุณ
+Dockerfile สำหรับการสร้างแอปพลิเคชันจะมีรูปแบบ ดังนี้
+```js
+FROM golang:1.11-alpine AS build
+
+# Install tools required for project
+# Run `docker build --no-cache .` to update dependencies
+RUN apk add --no-cache git
+RUN go get github.com/golang/dep/cmd/dep
+
+# List project dependencies with Gopkg.toml and Gopkg.lock
+# These layers are only re-built when Gopkg files are updated
+COPY Gopkg.lock Gopkg.toml /go/src/project/
+WORKDIR /go/src/project/
+# Install library dependencies
+RUN dep ensure -vendor-only
+
+# Copy the entire project and build it
+# This layer is rebuilt when a file changes in the project directory
+COPY . /go/src/project/
+RUN go build -o /bin/project
+
+# This results in a single layer image
+FROM scratch
+COPY --from=build /bin/project /bin/project
+ENTRYPOINT ["/bin/project"]
+CMD ["--help"]
+```
+### Don’t install unnecessary packages
+เพื่อลดความซับซ้อน การอ้างอิง ขนาดไฟล์ และเวลาในการ build ให้หลีกเลี่ยงการติดตั้งแพ็กเกจพิเศษหรือไม่จำเป็น เพียงพราะว่าสิ่งเหล่านั้นอาจจะ “ดีที่มี” ตัวอย่างเช่น คุณไม่จำเป็นต้องมีเครื่องมือ text editor ในฐานข้อมูล image ของคุณก็ได้
 ### Decouple applications
+Container แต่ละอันควรพิจารณาเพียงข้อเดียว คือ การแยกแอปพลิเคชันออกเป็นหลาย Container เพื่อทำให้ง่ายต่อการปรับขนาดในแนวนอนและนำกลับมาใช้ใหม่ ตัวอย่างเช่น stack ของเว็บแอปพลิเคชันอาจประกอบด้วย 3 container แยกกัน แต่ละอันมี image เฉพาะของตนเอง เพื่อจัดการเว็บแอปพลิเคชัน ฐานข้อมูล และ cache ในหน่วยความจำ ในลักษณะที่แยกจากกัน
+การจำกัดของแต่ละ container ให้กับกระบวนการหนึ่งเป็นกฎง่ายๆของ thumb แต่ก็ไม่ใช่กฎที่ยากและรวดเร็ว ตัวอย่างเช่น ไม่เพียงแต่ container จะสามารถสร้างได้ด้วยกระบวนการเริ่มต้น บางโปรแกรมอาจสร้างได้ด้วยกระบวนการอื่นเพิ่มเติมตามความต้องการของมัน ตัวอย่างเช่น Celery สามารถสร้างกระบวนการทำงานได้หลายอย่าง และ Apache สามารถสร้าง 1 กระบวนการได้ต่อ 1 คำขอ
+ใช้วิจารณญาณที่ดีของคุณเพื่อให้ container เป็นระเบียบและเป็นไปได้มากที่สุด หาก container ขึ้นอยู่กับอันอื่นด้วย คุณสามารถใช้เครือข่ายของ Docker container เพื่อให้แน่ใจว่า container เหล่านี้สามารถสื่อสารได้
 ### Minimize the number of layers
+ในเวอร์ชันที่เก่ากว่าของ Docker มันเป็นสิ่งสำคัญที่คุณต้องลดจำนวนเลเยอร์ใน image ของคุณ เพื่อให้แน่ใจว่าพวกมันมีประสิทธิภาพ โดยมีการเพิ่มคุณสมบัติต่อไปนี้เพื่อลดข้อจำกัดนี้:
+* ต้องใช้คำสั่ง **RUN, COPY, ADD** สร้างเลเยอร์เท่านั้น ส่วนคำแนะนำอื่นจะสร้างเพียง image ชั่วคราวและไม่เพิ่มขนาดของการ build
+* หากเป็นไปได้ให้ใช้การสร้างแบบ multi-stage build และคัดลอกเฉพาะสิ่งที่คุณต้องการลงใน image ที่เสร็จสิ้นเท่านั้น สิ่งนี้ช่วยให้คุณรวมเครื่องมือและข้อมูลการดีบักในขั้นตอนระหว่างการ build โดยไม่เพิ่มขนาดของ image ที่เสร็จสิ้น
 ### Sort multi-line arguments
 * การแบ่งโค้ดให้เป็นหลายบรรทัด
 * การทำแบบนี้จะช่วยให้หลีกเลี่ยงการพิมซ้ำ
